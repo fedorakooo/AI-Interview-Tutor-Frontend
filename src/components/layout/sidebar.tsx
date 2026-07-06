@@ -16,26 +16,29 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/hooks/use-auth";
+import { useCvReady } from "@/lib/hooks/use-cv-status";
 
 type NavItem = {
   href: string;
   label: string;
   icon: LucideIcon;
+  requiresCv?: boolean;
   disabled?: boolean;
 };
 
 const navItems: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/onboarding", label: "Onboarding", icon: Upload },
-  { href: "/interview", label: "Interview", icon: MessageSquare, disabled: true },
-  { href: "/sessions", label: "Sessions", icon: ClipboardList, disabled: true },
-  { href: "/practice", label: "Practice", icon: BookOpen, disabled: true },
+  { href: "/interview", label: "Interview", icon: MessageSquare, requiresCv: true },
+  { href: "/sessions", label: "Sessions", icon: ClipboardList },
+  { href: "/practice", label: "Practice", icon: BookOpen },
   { href: "/profile", label: "Profile", icon: User, disabled: true },
 ];
 
 export function Sidebar() {
   const pathname = usePathname();
   const { user, logout } = useAuth();
+  const { isCvReady } = useCvReady();
 
   return (
     <aside className="flex w-64 flex-col border-r bg-card">
@@ -56,14 +59,20 @@ export function Sidebar() {
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
+          const isDisabled = item.disabled || (item.requiresCv && !isCvReady);
 
-          if (item.disabled) {
+          if (isDisabled) {
             return (
               <Button
                 key={item.href}
                 variant="ghost"
                 className="w-full justify-start text-muted-foreground"
                 disabled
+                title={
+                  item.requiresCv && !isCvReady
+                    ? "Upload and analyze your CV first"
+                    : undefined
+                }
               >
                 <Icon className="mr-2 size-4" />
                 {item.label}
