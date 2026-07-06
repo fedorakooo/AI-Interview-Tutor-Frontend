@@ -30,7 +30,7 @@ const navItems: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/onboarding", label: "Onboarding", icon: Upload },
   { href: "/interview", label: "Interview", icon: MessageSquare, requiresCv: true },
-  { href: "/sessions", label: "Sessions", icon: ClipboardList, disabled: true },
+  { href: "/sessions", label: "Sessions", icon: ClipboardList },
   { href: "/practice", label: "Practice", icon: BookOpen, disabled: true },
   { href: "/profile", label: "Profile", icon: User, disabled: true },
 ];
