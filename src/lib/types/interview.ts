@@ -44,8 +44,33 @@ export interface InterviewRuntimeStatus {
 /** Client → Server WebSocket messages */
 export type ClientMessage =
   | { type: "user_message"; content: string }
+  | { type: "voice_chunk"; transcript: string; content?: string }
   | { type: "end_interview" }
-  | { type: "get_status" };
+  | { type: "get_status" }
+  | {
+      type: "start_config";
+      mode: InterviewMode;
+      job_description?: string;
+      company_preset?: string;
+      role_track?: string;
+      language?: string;
+      voice_enabled?: boolean;
+    };
+
+export type InterviewMode = "behavioral" | "technical" | "system_design" | "mixed" | "coding";
+
+export interface TranscriptMessage {
+  role: string;
+  content: string;
+  timestamp?: string | null;
+  stage?: string | null;
+}
+
+export interface InterviewTranscript {
+  session_id: string;
+  user_id: string;
+  messages: TranscriptMessage[];
+}
 
 /** Server → Client WebSocket messages */
 export type ServerMessage =
@@ -101,3 +126,4 @@ export interface ChatMessage {
   stage?: string;
   timestamp: string;
 }
+

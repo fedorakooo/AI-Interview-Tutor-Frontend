@@ -75,6 +75,15 @@ export function LoginForm() {
         {isSubmitting ? "Signing in..." : "Sign in"}
       </Button>
 
+      <p className="text-center text-sm">
+        <Link
+          href="/reset-password"
+          className="text-muted-foreground underline-offset-4 hover:underline"
+        >
+          Forgot password?
+        </Link>
+      </p>
+
       <p className="text-center text-sm text-muted-foreground">
         Don&apos;t have an account?{" "}
         <Link href="/signup" className="text-primary underline-offset-4 hover:underline">
