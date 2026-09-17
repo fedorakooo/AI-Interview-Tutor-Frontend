@@ -5,9 +5,9 @@ import { authApi } from "@/lib/api/auth";
 import { env } from "@/lib/env";
 import { tokenStore } from "@/lib/auth/token-store";
 import { decodeAccessToken, isTokenExpired } from "@/lib/auth/jwt";
-import type { ChatMessage, ClientMessage, InterviewReport, ServerMessage } from "@/lib/types/interview";
+import type { ChatMessage, ClientMessage, InterviewMode, InterviewReport, ServerMessage } from "@/lib/types/interview";
 
-type SocketState = {
+export type SocketState = {
   messages: ChatMessage[];
   sessionId: string | null;
   stage: string | null;
@@ -17,7 +17,7 @@ type SocketState = {
   closeCode: number | null;
 };
 
-type Action =
+export type SocketAction =
   | { type: "CONNECTING" }
   | { type: "CONNECTED"; sessionId: string; cvSource: string }
   | { type: "AGENT_MESSAGE"; content: string; stage: string }
@@ -27,7 +27,17 @@ type Action =
   | { type: "ERROR"; message: string }
   | { type: "DISCONNECTED"; closeCode?: number };
 
-function reducer(state: SocketState, action: Action): SocketState {
+export type InterviewStartConfig = {
+  mode: InterviewMode;
+  jobDescription: string;
+  companyPreset?: string;
+  roleTrack?: string;
+  language?: string;
+  voiceEnabled?: boolean;
+  resumeSessionId?: string;
+};
+
+export function interviewSocketReducer(state: SocketState, action: SocketAction): SocketState {
   const now = new Date().toISOString();
   switch (action.type) {
     case "CONNECTING":
@@ -99,7 +109,7 @@ function reducer(state: SocketState, action: Action): SocketState {
   }
 }
 
-const initialState: SocketState = {
+export const interviewSocketInitialState: SocketState = {
   messages: [],
   sessionId: null,
   stage: null,
@@ -114,11 +124,9 @@ async function getValidAccessToken(): Promise<string | null> {
   if (!token) return null;
 
   if (isTokenExpired(token)) {
-    const refresh = tokenStore.getRefreshToken();
-    if (!refresh) return null;
     try {
-      const tokens = await authApi.refresh(refresh);
-      tokenStore.setTokens(tokens.access_token, tokens.refresh_token);
+      const tokens = await authApi.refresh();
+      tokenStore.setAccessToken(tokens.access_token);
       token = tokens.access_token;
     } catch {
       return null;
@@ -129,11 +137,11 @@ async function getValidAccessToken(): Promise<string | null> {
 }
 
 export function useInterviewSocket() {
-  const [state, dispatch] = useReducer(reducer, initialState);
+  const [state, dispatch] = useReducer(interviewSocketReducer, interviewSocketInitialState);
   const wsRef = useRef<WebSocket | null>(null);
   const [isAgentTyping, setIsAgentTyping] = useState(false);
 
-  const connect = useCallback(async () => {
+  const connect = useCallback(async (config?: InterviewStartConfig) => {
     const token = await getValidAccessToken();
     const claims = token ? decodeAccessToken(token) : null;
     if (!token || !claims?.id) {
@@ -144,9 +152,33 @@ export function useInterviewSocket() {
     if (wsRef.current?.readyState === WebSocket.OPEN) return;
 
     dispatch({ type: "CONNECTING" });
-    const url = `${env.NEXT_PUBLIC_WS_BASE_URL}/api/v1/interview/ws/${claims.id}?token=${encodeURIComponent(token)}`;
+    const params = new URLSearchParams({ token });
+    if (config?.mode) params.set("mode", config.mode);
+    if (config?.jobDescription.trim()) params.set("job_description", config.jobDescription.trim());
+    if (config?.companyPreset) params.set("company_preset", config.companyPreset);
+    if (config?.roleTrack) params.set("role_track", config.roleTrack);
+    if (config?.language) params.set("language", config.language);
+    if (config?.voiceEnabled) params.set("voice_enabled", "true");
+    if (config?.resumeSessionId) params.set("resume_session_id", config.resumeSessionId);
+    const url = `${env.NEXT_PUBLIC_WS_BASE_URL}/api/v1/interview/ws/${claims.id}?${params.toString()}`;
     const ws = new WebSocket(url);
     wsRef.current = ws;
+
+    ws.onopen = () => {
+      if (config?.mode || config?.jobDescription.trim()) {
+        ws.send(
+          JSON.stringify({
+            type: "start_config",
+            mode: config.mode ?? "mixed",
+            job_description: config.jobDescription.trim() || undefined,
+            company_preset: config.companyPreset,
+            role_track: config.roleTrack,
+            language: config.language,
+            voice_enabled: config.voiceEnabled,
+          }),
+        );
+      }
+    };
 
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data as string) as ServerMessage;
@@ -215,6 +247,14 @@ export function useInterviewSocket() {
     setIsAgentTyping(true);
   }, []);
 
+  const sendVoiceChunk = useCallback((transcript: string) => {
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
+    const msg = { type: "voice_chunk", transcript };
+    wsRef.current.send(JSON.stringify(msg));
+    dispatch({ type: "USER_MESSAGE", content: transcript });
+    setIsAgentTyping(true);
+  }, []);
+
   const endInterview = useCallback(() => {
     if (!wsRef.current) return;
     const msg: ClientMessage = { type: "end_interview" };
@@ -234,6 +274,7 @@ export function useInterviewSocket() {
     isAgentTyping,
     connect,
     sendMessage,
+    sendVoiceChunk,
     endInterview,
     isConnected: state.status === "connected",
   };

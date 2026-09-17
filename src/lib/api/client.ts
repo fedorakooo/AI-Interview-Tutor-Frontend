@@ -17,23 +17,17 @@ let refreshPromise: Promise<string | null> | null = null;
 async function refreshAccessToken(): Promise<string | null> {
   if (!refreshPromise) {
     refreshPromise = (async () => {
-      const refreshToken = tokenStore.getRefreshToken();
-      if (!refreshToken) return null;
-
-      const body = new URLSearchParams({ refresh_token: refreshToken });
-      const res = await fetch(`${env.NEXT_PUBLIC_API_BASE_URL}/api/v1/auth/refresh`, {
+      const res = await fetch("/api/auth/refresh", {
         method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body,
+        credentials: "same-origin",
       });
 
       if (!res.ok) return null;
 
       const data = (await res.json()) as {
         access_token: string;
-        refresh_token: string;
       };
-      tokenStore.setTokens(data.access_token, data.refresh_token);
+      tokenStore.setAccessToken(data.access_token);
       return data.access_token;
     })().finally(() => {
       refreshPromise = null;
@@ -42,7 +36,7 @@ async function refreshAccessToken(): Promise<string | null> {
   return refreshPromise;
 }
 
-function parseError(status: number, body: unknown): AppError {
+export function parseError(status: number, body: unknown): AppError {
   if (body && typeof body === "object") {
     const obj = body as Record<string, unknown>;
     if (obj.detail && typeof obj.detail === "object") {

@@ -4,13 +4,23 @@ import { useState } from "react";
 import { Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { VoiceInputToggle } from "@/components/interview/voice-input-toggle";
 
 interface InterviewInputBarProps {
   disabled?: boolean;
   onSend: (content: string) => void;
+  voiceEnabled?: boolean;
+  voiceLanguage?: string;
+  onVoiceTranscript?: (transcript: string) => void;
 }
 
-export function InterviewInputBar({ disabled, onSend }: InterviewInputBarProps) {
+export function InterviewInputBar({
+  disabled,
+  onSend,
+  voiceEnabled,
+  voiceLanguage = "en-US",
+  onVoiceTranscript,
+}: InterviewInputBarProps) {
   const [value, setValue] = useState("");
 
   const handleSubmit = () => {
@@ -38,6 +48,13 @@ export function InterviewInputBar({ disabled, onSend }: InterviewInputBarProps) 
         rows={2}
         className="min-h-[60px] resize-none"
       />
+      {voiceEnabled && onVoiceTranscript ? (
+        <VoiceInputToggle
+          disabled={disabled}
+          language={voiceLanguage}
+          onTranscript={onVoiceTranscript}
+        />
+      ) : null}
       <Button
         type="button"
         size="icon-lg"

@@ -105,16 +105,30 @@ export default function SessionsPage() {
                       <TableCell>{session.overall_stage}</TableCell>
                       <TableCell>{session.message_count}</TableCell>
                       <TableCell className="text-right">
-                        {canViewReport ? (
+                        <div className="flex justify-end gap-2">
+                          {session.status === "suspended" ? (
+                            <Link
+                              href={`/interview?resume=${session.session_id}`}
+                              className={cn(buttonVariants({ size: "sm" }))}
+                            >
+                              Resume
+                            </Link>
+                          ) : null}
                           <Link
-                            href={`/sessions/${session.session_id}/report`}
-                            className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+                            href={`/sessions/${session.session_id}/transcript`}
+                            className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}
                           >
-                            View report
+                            Transcript
                           </Link>
-                        ) : (
-                          <span className="text-sm text-muted-foreground">—</span>
-                        )}
+                          {canViewReport && (
+                            <Link
+                              href={`/sessions/${session.session_id}/report`}
+                              className={cn(buttonVariants({ variant: "outline", size: "sm" }))}
+                            >
+                              View report
+                            </Link>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   );

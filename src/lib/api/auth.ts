@@ -1,4 +1,4 @@
-import { apiRequest } from "./client";
+import { apiRequest, parseError } from "./client";
 import type {
   PasswordResetTokenResponse,
   ResetPasswordRequest,
@@ -6,6 +6,24 @@ import type {
   UserCreateRequest,
   UserResponse,
 } from "@/lib/types/auth";
+
+export type AccessTokenResponse = Pick<TokenResponse, "access_token" | "auth_type">;
+
+async function bffRequest(path: string, body?: Record<string, string>): Promise<AccessTokenResponse> {
+  const response = await fetch(path, {
+    method: "POST",
+    credentials: "same-origin",
+    headers: body ? { "Content-Type": "application/json" } : undefined,
+    body: body ? JSON.stringify(body) : undefined,
+  });
+
+  if (!response.ok) {
+    const errBody = await response.json().catch(() => ({}));
+    throw parseError(response.status, errBody);
+  }
+
+  return response.json() as Promise<AccessTokenResponse>;
+}
 
 export const authApi = {
   signup(data: UserCreateRequest) {
@@ -17,21 +35,19 @@ export const authApi = {
   },
 
   login(username: string, password: string) {
-    return apiRequest<TokenResponse>("/api/v1/auth/token", {
-      method: "POST",
-      form: { username, password },
-      auth: false,
-      retry: false,
-    });
+    return bffRequest("/api/auth/login", { username, password });
   },
 
-  refresh(refreshToken: string) {
-    return apiRequest<TokenResponse>("/api/v1/auth/refresh", {
-      method: "POST",
-      form: { refresh_token: refreshToken },
-      auth: false,
-      retry: false,
-    });
+  refresh() {
+    return bffRequest("/api/auth/refresh");
+  },
+
+  async logout() {
+    try {
+      await fetch("/api/auth/logout", { method: "POST", credentials: "same-origin" });
+    } catch {
+      // Cookie/session cleanup on the client still proceeds.
+    }
   },
 
   requestPasswordReset(email: string) {
@@ -50,3 +66,4 @@ export const authApi = {
     });
   },
 };
+

@@ -127,3 +127,67 @@
     @apply font-sans;
   }
 }
+
+@keyframes marketing-float {
+  0%,
+  100% {
+    transform: translateY(0px) scale(1);
+    opacity: 0.55;
+  }
+  50% {
+    transform: translateY(-18px) scale(1.06);
+    opacity: 0.85;
+  }
+}
+
+@keyframes marketing-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.marketing-orb {
+  animation: marketing-float 9s ease-in-out infinite;
+}
+
+.marketing-orb-delayed {
+  animation: marketing-float 11s ease-in-out infinite;
+  animation-delay: 1.4s;
+}
+
+.marketing-card {
+  animation: marketing-rise 0.6s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marketing-orb,
+  .marketing-orb-delayed,
+  .marketing-card {
+    animation: none;
+  }
+}
+
+@keyframes landing-float {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(1.5rem, -1rem, 0) scale(1.08); }
+}
+
+.landing-orb {
+  animation: landing-float 9s ease-in-out infinite;
+}
+
+.landing-orb-delay {
+  animation: landing-float 12s ease-in-out -4s infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-orb,
+  .landing-orb-delay {
+    animation: none;
+  }
+}

@@ -2,13 +2,14 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Sidebar } from "@/components/layout/sidebar";
+import { AppShell } from "@/components/layout/app-shell";
 import { DashboardSkeleton } from "@/components/layout/dashboard-skeleton";
+import { BlockedUserModal } from "@/components/auth/blocked-user-modal";
 import { useAuth } from "@/lib/hooks/use-auth";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, isBlocked, logout } = useAuth();
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -25,9 +26,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <div className="flex min-h-screen">
-      <Sidebar />
-      <main className="flex-1 p-6">{children}</main>
-    </div>
+    <>
+      <AppShell>{children}</AppShell>
+      <BlockedUserModal open={isBlocked} onLogout={logout} />
+    </>
   );
 }
