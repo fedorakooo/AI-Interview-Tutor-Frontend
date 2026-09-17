@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SkillRadarChart } from "@/components/report/skill-radar-chart";
+import { ShareReportButton } from "@/components/report/share-report-button";
 import { useInterviewAutoPlan } from "@/lib/hooks/use-interview-auto-plan";
 import type { InterviewReport } from "@/lib/types/interview";
 import { cn } from "@/lib/utils";
@@ -99,6 +100,7 @@ export function ReportDetail({ report, sessionId, pollAutoPlan = false }: Report
         <Link href="/practice" className={cn(buttonVariants())}>
           Start practice plan
         </Link>
+        {sessionId ? <ShareReportButton sessionId={sessionId} /> : null}
         {autoPlan && (
           <Link
             href={`/practice/${autoPlan.plan_id}`}

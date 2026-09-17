@@ -5,6 +5,7 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { Toaster } from "@/components/ui/sonner";
 import { useState } from "react";
 import { env } from "@/lib/env";
+import { I18nProvider } from "@/lib/i18n/provider";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
@@ -21,9 +22,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      {children}
-      <Toaster richColors position="top-right" />
-      {env.NEXT_PUBLIC_ENABLE_QUERY_DEVTOOLS && <ReactQueryDevtools />}
+      <I18nProvider>
+        {children}
+        <Toaster richColors position="top-right" />
+        {env.NEXT_PUBLIC_ENABLE_QUERY_DEVTOOLS && <ReactQueryDevtools />}
+      </I18nProvider>
     </QueryClientProvider>
   );
 }

@@ -1,7 +1,6 @@
-const STORAGE_KEY = "ait_tokens";
+const STORAGE_KEY = "ait_access_token";
 
 let accessToken: string | null = null;
-let refreshToken: string | null = null;
 
 const listeners = new Set<() => void>();
 
@@ -15,20 +14,19 @@ function hydrateFromStorage(): void {
   try {
     const raw = sessionStorage.getItem(STORAGE_KEY);
     if (!raw) return;
-
-    const parsed = JSON.parse(raw) as { access?: string; refresh?: string };
-    if (parsed.access && parsed.refresh) {
-      accessToken = parsed.access;
-      refreshToken = parsed.refresh;
+    if (raw.startsWith("{")) {
+      sessionStorage.removeItem(STORAGE_KEY);
+      return;
     }
+    accessToken = raw;
   } catch {
     sessionStorage.removeItem(STORAGE_KEY);
   }
 }
 
-function persist(access: string, refresh: string): void {
+function persist(access: string): void {
   if (typeof window === "undefined") return;
-  sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ access, refresh }));
+  sessionStorage.setItem(STORAGE_KEY, access);
 }
 
 function clearStorage(): void {
@@ -44,27 +42,24 @@ export const tokenStore = {
     return () => listeners.delete(listener);
   },
 
-  getSnapshot(): { access: string | null; refresh: string | null } {
-    return { access: accessToken, refresh: refreshToken };
+  getSnapshot(): { access: string | null } {
+    return { access: accessToken };
   },
 
-  getServerSnapshot(): { access: string | null; refresh: string | null } {
-    return { access: null, refresh: null };
+  getServerSnapshot(): { access: string | null } {
+    return { access: null };
   },
 
   getAccessToken: () => accessToken,
-  getRefreshToken: () => refreshToken,
 
-  setTokens: (access: string, refresh: string) => {
+  setAccessToken: (access: string) => {
     accessToken = access;
-    refreshToken = refresh;
-    persist(access, refresh);
+    persist(access);
     notify();
   },
 
   clear: () => {
     accessToken = null;
-    refreshToken = null;
     clearStorage();
     notify();
   },
